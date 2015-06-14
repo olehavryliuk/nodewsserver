@@ -1,0 +1,68 @@
+<!--Simple browser websocket client. Will try to reconnect if connection drops.-->
+<!doctype html>
+<html>
+<head>
+</head>
+<body>
+
+<div id="input">
+	<!--form for sending messages-->
+	<form name="publish" id="message_form">
+		<textarea rows="10" cols="35" name="message" form="message_form"></textarea>
+		<br>
+		<input type="submit" value="Send text data to websocket server" id="submit_button"/>
+	</form>
+</div>
+
+<!-- server responce messages -->
+<div id="subscribe"></div>
+
+<script>
+var reconnectInterval = 3 * 1000;
+
+var ws;
+document.getElementById("submit_button").setAttribute("disabled", true);
+
+var connect = function(){
+	ws = new WebSocket("ws://localhost:3000");
+	
+	ws.onopen = function() {
+		document.getElementById("submit_button").removeAttribute("disabled");
+		console.log("socket open");
+	};
+
+	// incoming message handler
+	ws.onmessage = function(event) {
+		showMessage(event.data);
+	};
+	
+	ws.onerror = function() {
+		console.log("socket error");
+	//	setTimeout(connect, reconnectInterval);
+	};
+	//try to reconnect if closed
+	ws.onclose = function() {
+		console.log("socket closed");
+		document.getElementById("submit_button").setAttribute("disabled", true);
+		setTimeout(connect, reconnectInterval);
+		//alert("Websocked connection closed! Trying to reestablish connection.");
+	};
+};
+connect();
+
+// send message from form publish
+document.forms.publish.onsubmit = function() {
+	ws.send(this.message.value);
+	return false;
+};
+
+// show message in div#subscribe
+function showMessage(message) {
+	var messageElem = document.createElement('div');
+	messageElem.appendChild(document.createTextNode(message));
+	document.getElementById('subscribe').appendChild(messageElem);
+}
+</script>
+
+</body>
+</html>
